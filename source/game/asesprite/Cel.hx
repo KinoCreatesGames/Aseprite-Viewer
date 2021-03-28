@@ -11,29 +11,24 @@ using game.asesprite.Color;
 /**
  * A single cell in Asesprite, containing the pixel information.
  * This pixel data exists on a frame on a layer.
+ * Pixel information is used to map the colors on the Bitmap.
  */
 class Cel extends BitmapData {
-	private var celChunk:CelChunk;
-
-	public var chunk(default, null):CelChunk;
-
-	function get_chunk():CelChunk {
-		return celChunk;
-	}
+	public var data(default, null):CelChunk;
 
 	public function new(sprite:Asesprite, celChunk:CelChunk) {
 		super(celChunk.width, celChunk.height, true, 0x00000000);
-		this.celChunk = celChunk;
+		data = celChunk;
 
 		// Pixel Input uses BytesInput as a container to stream the bytes
 		// as we see fit
-		var pixelInput:BytesInput = new BytesInput(this.celChunk.rawData);
+		var pixelInput:BytesInput = new BytesInput(data.rawData);
 		var pixels:ByteArray = new ByteArray(celChunk.width * celChunk.height * 4);
 
 		// We loop from top to bottom left to right as in Asesprite
 		// Pixels are filled from top left to bottom right.
-		for (_ in 0...this.celChunk.height) {
-			for (_ in 0...this.celChunk.width) {
+		for (_ in 0...data.height) {
+			for (_ in 0...data.width) {
 				// Note Unsigned Int is only for Flash and C#, simulated for other platforms
 				var pixel:UInt = 0x00000000; // AARRGGBB
 

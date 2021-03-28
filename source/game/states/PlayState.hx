@@ -1,5 +1,6 @@
 package game.states;
 
+import game.asesprite.Asesprite;
 import ase.Frame;
 import ase.chunks.LayerChunk;
 import ase.chunks.ChunkType;
@@ -21,26 +22,29 @@ class PlayState extends FlxState {
 
 	public function createAse() {
 		var exampleAseFile = AssetPaths.example__aseprite;
-		var data = Assets.loadBytes(exampleAseFile);
-		data.onComplete((value) -> {
-			// trace(value);
-			var ase = Ase.fromBytes(value);
-			// trace(ase);
-			var sprite = new FlxSprite(0, 0);
-			sprite.makeGraphic(ase.header.width, ase.header.height,
-				KColor.TRANSPARENT);
-			trace(sprite.width, sprite.height);
-			var chunk = ase.frames[0].chunks[0];
-			switch (chunk.header.type) {
-				case ChunkType.LAYER:
-					var layerChunk:LayerChunk = cast chunk;
-				// sprite.pixels.draw(ase.frames[0].);
-				case _:
-					// Do nothing for now;
-			}
+		trace('Added Asesprite File');
+		var aSprite = new Asesprite(30, 30, 320, 299, exampleAseFile);
+		add(aSprite);
+		// var data = Assets.loadBytes(exampleAseFile);
+		// data.onComplete((value) -> {
+		// 	// trace(value);
+		// 	var ase = Ase.fromBytes(value);
+		// 	// trace(ase);
+		// 	var sprite = new FlxSprite(0, 0);
+		// 	sprite.makeGraphic(ase.header.width, ase.header.height,
+		// 		KColor.TRANSPARENT);
+		// 	trace(sprite.width, sprite.height);
+		// 	var chunk = ase.frames[0].chunks[0];
+		// 	switch (chunk.header.type) {
+		// 		case ChunkType.LAYER:
+		// 			var layerChunk:LayerChunk = cast chunk;
+		// 		// sprite.pixels.draw(ase.frames[0].);
+		// 		case _:
+		// 			// Do nothing for now;
+		// 	}
 
-			add(sprite);
-		});
+		// 	add(sprite);
+		// });
 	}
 
 	public function createButtons() {

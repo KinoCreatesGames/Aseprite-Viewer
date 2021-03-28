@@ -8,27 +8,27 @@ import haxe.io.Bytes;
  * information.
  */
 class Palette {
-	private var data:PaletteChunk;
-	private var paletteEntries:Map<Int, UInt> = [];
+	public var data(default, null):PaletteChunk;
 
 	/**
 	 * A `Map` of palette's entries.
 	 */
-	public var entries(default, null):Map<Int, UInt>;
-
-	function get_entries():Map<Int, UInt> {
-		return paletteEntries;
-	}
+	public var entries(default, null):Map<Int, UInt> = [];
 
 	/**
 	 * Number of entries in the palette.
 	 */
-	public var size(default, null):Int;
+	public var size(get, null):Int;
 
-	function get_size():Int {
+	inline function get_size():Int {
 		return data.paletteSize;
 	}
 
+	/**
+	 * Creates a new palette with information on the 
+	 		* palette of the sprite in Asesprite.
+	 * @param paletteChunk 
+	 */
 	public function new(paletteChunk:PaletteChunk) {
 		data = paletteChunk;
 
@@ -39,7 +39,7 @@ class Palette {
 			color.set(1, entry.green);
 			color.set(2, entry.red);
 			color.set(3, entry.alpha);
-			paletteEntries.set(index, color.getInt32(0));
+			entries.set(index, color.getInt32(0));
 		}
 	}
 }

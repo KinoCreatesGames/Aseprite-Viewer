@@ -109,15 +109,9 @@ class PlayState extends FlxState {
 			this.asesprite.screenCenter();
 			this.asesprite.y -= 40;
 			createTagButtons();
-			trace(fileRef.data);
-			trace(fileRef.name);
-			trace(fileRef.type);
-			trace(fileRef.size);
 		});
 
 		fileRef.addEventListener(Event.SELECT, (event) -> {
-			trace('Selected file');
-			trace('Completed browsing files', fileRef.data);
 			fileRef.load();
 		});
 		fileRef.browse();

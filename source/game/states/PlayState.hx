@@ -106,6 +106,8 @@ class PlayState extends FlxState {
 			this.asesprite.kill();
 			this.asesprite = asesprite;
 			add(this.asesprite);
+			this.asesprite.screenCenter();
+			this.asesprite.y -= 40;
 			createTagButtons();
 			trace(fileRef.data);
 			trace(fileRef.name);

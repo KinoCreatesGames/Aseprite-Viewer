@@ -1,5 +1,6 @@
 package game.asesprite;
 
+import openfl.display.Sprite;
 import openfl.geom.Matrix;
 import openfl.display.BlendMode;
 import ase.chunks.LayerFlags;
@@ -58,7 +59,9 @@ class Frame {
 
 	public var index(default, null):Int;
 
-	var nineSlices:NineSliceSlices;
+	public var nineSlices:NineSliceSlices;
+
+	public var sprite(default, null):Asesprite;
 
 	private var renderWidth:Int;
 	private var renderHeight:Int;
@@ -67,6 +70,9 @@ class Frame {
 			?nineSlices:NineSliceSlices, ?renderWidth:Int, ?renderHeight:Int,
 			?sprite:Asesprite, ?frame:ase.Frame) {
 		// If Frame Bitmap data is supplied, use that for rendering
+		if (sprite != null) {
+			this.sprite = sprite;
+		}
 		if (frameBitmapData != null) {
 			bitmapData = frameBitmapData;
 		} else {
@@ -105,63 +111,83 @@ class Frame {
 
 			for (layer in layers) {
 				if (layer.cel != null
-					&& (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {}
-				var blendModes:Array<BlendMode> = [
-					NORMAL, // 0 - Normal
-					MULTIPLY, // 1 - Multiply
-					SCREEN, // 2 - Scren
-					OVERLAY, // 3 - Overlay
-					DARKEN, // 4 - Darken
-					LIGHTEN, // 5 -Lighten
-					NORMAL, // 6 - Color Dodge - NOT IMPLEMENTED
-					NORMAL, // 7 - Color Burn - NOT IMPLEMENTED
-					HARDLIGHT, // 8 - Hard Light
-					NORMAL, // 9 - Soft Light - NOT IMPLEMENTED
-					DIFFERENCE, // 10 - Difference
-					ERASE, // 11 - Exclusion - Not sure about that
-					NORMAL, // 12 - Hue - NOT IMPLEMENTED
-					NORMAL, // 13 - Saturation - NOT IMPLEMENTED
-					NORMAL, // 14 - Color - NOT IMPLEMENTED
-					NORMAL, // 15 - Luminosity - NOT IMPLEMENTED
-					ADD, // 16 - Addition
-					SUBTRACT, // 17 - Subtract
-					NORMAL // 18 - Divide - NOT IMPLEMENTED
-				];
-				var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
-				// Draws The Cel Pixel Data with the speicified blendMode into
-				// the bitmap data
-				var matrix:Matrix = new Matrix();
-				matrix.translate(layer.cel.data.xPosition,
-					layer.cel.data.yPosition);
-				bitmapData.lock();
-				bitmapData.draw(layer.cel, matrix, null, blendMode);
-				bitmapData.unlock();
+					&& (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
+					var blendModes:Array<BlendMode> = [
+						NORMAL, // 0 - Normal
+						MULTIPLY, // 1 - Multiply
+						SCREEN, // 2 - Scren
+						OVERLAY, // 3 - Overlay
+						DARKEN, // 4 - Darken
+						LIGHTEN, // 5 -Lighten
+						NORMAL, // 6 - Color Dodge - NOT IMPLEMENTED
+						NORMAL, // 7 - Color Burn - NOT IMPLEMENTED
+						HARDLIGHT, // 8 - Hard Light
+						NORMAL, // 9 - Soft Light - NOT IMPLEMENTED
+						DIFFERENCE, // 10 - Difference
+						ERASE, // 11 - Exclusion - Not sure about that
+						NORMAL, // 12 - Hue - NOT IMPLEMENTED
+						NORMAL, // 13 - Saturation - NOT IMPLEMENTED
+						NORMAL, // 14 - Color - NOT IMPLEMENTED
+						NORMAL, // 15 - Luminosity - NOT IMPLEMENTED
+						ADD, // 16 - Addition
+						SUBTRACT, // 17 - Subtract
+						NORMAL // 18 - Divide - NOT IMPLEMENTED
+					];
+					var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
+					// Draws The Cel Pixel Data with the speicified blendMode into
+					// the bitmap data
+					var matrix:Matrix = new Matrix();
+					matrix.translate(layer.cel.data.xPosition,
+						layer.cel.data.yPosition);
+					bitmapData.lock();
+					bitmapData.draw(layer.cel, matrix, null, blendMode);
+					bitmapData.unlock();
+				}
 			}
 		}
 	}
 
+	// TODO: Remove 9Slice as we already have graphic resize in Flixel
 	public function render9Slice(renderWidth:Int, renderHeight:Int) {
 		if (null) if (bitmapData != null) {
 			bitmapData.dispose();
 			bitmapData = null;
 		}
 
-		// TODO: Finish this information
-		// for (row in 0...3) {
-		// 	for (col in 0...3) {
-		// 		var sliceRender = new Shape();
-		// 		sliceRender.graphics.beginBitmapFill(nineSlices[row][col]);
-		// 		sliceRender.graphics.drawRect(0, 0, widths[col], heights[row]);
-		// 		sliceRender.graphics.endFill();
+		var centerWidth = renderWidth
+			- (nineSlices[0][0].width + nineSlices[0][2].width);
+		var centerHeight = renderHeight
+			- (nineSlices[0][0].height + nineSlices[2][0].height);
 
-		// 		sliceRender.x = xs[col];
-		// 		sliceRender.y = ys[row];
-		// 	}
-		// }
+		var centerX = nineSlices[0][0].width;
+		var centerY = nineSlices[0][0].height;
 
-		// bitmapData = new BitmapData(renderWidth, renderHeight, true,
-		// 	0x00000000);
-		// bitmapData.draw(render);
+		var xs = [0, centerX, centerX + centerWidth];
+		var ys = [0, centerY, centerY + centerHeight];
+
+		var widths:Array<Int> = [nineSlices[0][0].width, centerWidth, nineSlices[0][2].width];
+		var heights:Array<Int> = [nineSlices[0][0].height, centerHeight, nineSlices[2][0].height];
+
+		var render = new Sprite();
+
+		for (row in 0...3) {
+			for (col in 0...3) {
+				var sliceRender = new Shape();
+				sliceRender.graphics.beginBitmapFill(nineSlices[row][col]);
+				sliceRender.graphics.drawRect(0, 0, widths[col], heights[row]);
+				sliceRender.graphics.endFill();
+
+				sliceRender.x = xs[col];
+				sliceRender.y = ys[row];
+				// Takes the render of the slice and adds it to the new
+				// Render so that we can draw the bitmap data from all the added children
+				render.addChild(sliceRender);
+			}
+		}
+
+		bitmapData = new BitmapData(renderWidth, renderHeight, true,
+			0x00000000);
+		bitmapData.draw(render);
 	}
 
 	/**

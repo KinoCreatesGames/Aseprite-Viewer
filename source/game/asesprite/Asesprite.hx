@@ -1,5 +1,6 @@
 package game.asesprite;
 
+import openfl.geom.Rectangle;
 import ase.chunks.ChunkType;
 import ase.chunks.TagsChunk;
 import haxe.io.Bytes;
@@ -34,6 +35,7 @@ class Asesprite extends FlxSprite {
 	public var aPalette(default, null):Palette;
 	public var aBitmap(default, null):Bitmap;
 	public var aPlaying(default, null):Bool;
+	public var playBackSpeed:Int = 20;
 
 	/**
 	 * Map of all the tags associated with the asesprite file.
@@ -45,7 +47,7 @@ class Asesprite extends FlxSprite {
 	public var onFrame:Array<Int -> Void> = [];
 	public var onTag:Array<Array<String> -> Void> = [];
 
-	public var currentFrame:Int = -1;
+	public var currentFrame(default, set):Int = -1;
 	public var currentRepeat:Int = 0;
 	public var currentTag:String;
 	public var alternatingDirection:Int = AnimationDirection.FORWARD;
@@ -55,23 +57,50 @@ class Asesprite extends FlxSprite {
 	public var toFrame(get, never):Int;
 	public var fromFrame(get, never):Int;
 
+	/**
+		Array of `Slice`s
+	**/
+	public var slices(default, null):Map<String, Slice> = [];
+
 	public static function fromBytes(bytes:Bytes, useEnterFrame:Bool = true) {
 		return null;
 		// return new Asesprite(0, 0, );
 	}
 
-	public function new(x:Float, y:Float, width, height, aseFile:String) {
+	public function new(x:Float, y:Float, width, height, ?aseFile:String,
+			?bytes:Bytes) {
 		super(x, y);
-		this.filePath = aseFile;
+
+		this.makeGraphic(width, height, KColor.TRANSPARENT);
 		// Load the Bytes from the Asesprite file
-		Assets.loadBytes(aseFile).onComplete((byteData:ByteArray) -> {
-			var data = byteData;
-			ase = Ase.fromBytes(data);
+		if (aseFile != null) {
+			this.filePath = aseFile;
+
+			Assets.loadBytes(this.filePath).onComplete((byteData:ByteArray) -> {
+				var data = byteData;
+				ase = Ase.fromBytes(data);
+				parseAsespriteFile(ase);
+				currentFrame = 0; // Default current frame and redraw frame data
+			});
+		}
+		if (bytes != null) {
+			ase = Ase.fromBytes(bytes);
+			trace(ase);
 			parseAsespriteFile(ase);
-			trace(this.aFrames[0].bitmapData);
-			this.makeGraphic(width, height, KColor.TRANSPARENT);
-			this.graphic.bitmap.draw(this.aFrames[0].bitmapData);
-		});
+			currentFrame = 0;
+		}
+	}
+
+	override public function update(elapsed:Float) {
+		super.update(elapsed);
+		if (aPlaying) {
+			advance(playBackSpeed);
+		}
+	}
+
+	public function setPlaybackSpeed(val:Int) {
+		this.playBackSpeed = val;
+		return this;
 	}
 
 	public function play(?tagName:String = null, ?repeats:Int = -1,
@@ -112,6 +141,26 @@ class Asesprite extends FlxSprite {
 		return null;
 	}
 
+	/**
+	 * Advance the animation by `time` in milliseconds
+	 * @param time 
+	 * @return Asesprite
+	 */
+	public function advance(time:Int):Asesprite {
+		if (aPlaying) {
+			if (time < 0) {
+				throw 'TODO: time value can be negative';
+			}
+			aFrameTime += time;
+			// Goes through each frame so long as frame is greater than duration
+			while (aFrameTime > aFrames[currentFrame].duration) {
+				aFrameTime -= aFrames[currentFrame].duration;
+				nextFrame();
+			}
+		}
+		return this;
+	}
+
 	public function nextFrame():Asesprite {
 		var currentDirection:Int = direction;
 		if (direction == AnimationDirection.PING_PONG) {
@@ -150,20 +199,19 @@ class Asesprite extends FlxSprite {
 	}
 
 	/**
-	 * Resizes all the frames of the asesprite
+	 * 
+	 * Resizes the sprite using Flixel setGraphicSize 
 	 		* sprite.
 	 * @param newWidth 
 	 * @param newHeight 
 	 */
 	public function resize(newWidth:Int, newHeight:Int) {
-		for (frame in aFrames) {
-			frame.resize(newWidth, newHeight);
-		}
-		aBitmap.bitmapData = aFrames[currentFrame].bitmapData;
+		setGraphicSize(newWidth, newHeight);
+		updateHitbox();
+		return this;
 	}
 
 	public function parseAsespriteFile(value:Ase):Ase {
-		// if (value != ase) {
 		ase = value;
 		for (chunk in ase.frames[0].chunks) {
 			switch (chunk.header.type) {
@@ -192,7 +240,9 @@ class Asesprite extends FlxSprite {
 						}
 					}
 				case ChunkType.SLICE:
-
+					var newSlice = new Slice(cast chunk);
+					slices[newSlice.name] = newSlice;
+					trace(slices);
 				case _:
 					// Do nothing
 			}
@@ -200,6 +250,9 @@ class Asesprite extends FlxSprite {
 		// Assign Asesprite Frames
 		for (index in 0...ase.frames.length) {
 			var frame = ase.frames[index];
+			// Haxe is smart enough to organize the extra functions based on type
+			// Meaning the frame information is being passed in to the last parameter
+			// Despite being put in the third parameter here
 			var newFrame:Frame = new Frame(index, this, frame);
 			// totalDuration  += newFrame.duration;
 			aFrames.push(newFrame);
@@ -213,7 +266,6 @@ class Asesprite extends FlxSprite {
 			}
 		}
 		currentFrame = 0;
-		// }
 
 		return ase;
 	}
@@ -234,5 +286,33 @@ class Asesprite extends FlxSprite {
 	 */
 	inline function get_fromFrame():Int {
 		return currentTag != null ? aTags[currentTag].data.fromFrame : 0;
+	}
+
+	/**
+	 * Specialized function that will update the 
+	 * frame and sprite data when you set the current frame.
+	 * @return Int
+	 */
+	function set_currentFrame(value:Int):Int {
+		if (value < 0) {
+			value = 0;
+		}
+
+		if (value >= aFrames.length) {
+			value = aFrames.length - 1;
+		}
+
+		// Update the bitmap data
+		currentFrame = value;
+		var frameData = aFrames[currentFrame].bitmapData;
+		// this.graphic.bitmap.fl
+		if (this.graphic != null) {
+			// Clear Previous Frame
+			this.graphic.bitmap.fillRect(new Rectangle(0, 0, frameWidth,
+				frameHeight),
+				KColor.TRANSPARENT);
+			this.graphic.bitmap.draw(frameData);
+		}
+		return currentFrame;
 	}
 }

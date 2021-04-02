@@ -11,11 +11,12 @@ class Color {
 	 */
 	public static function rgbaToargb(rgba:Bytes):UInt {
 		var argb:Bytes = Bytes.alloc(4);
-
-		argb.set(0, rgba.get(3)); // AA
-		argb.set(1, rgba.get(0)); // RR
-		argb.set(2, rgba.get(1)); // GG
-		argb.set(3, rgba.get(2)); // BB
+		// Not sure why Asesprite's color profile
+		// has bytes in a strange order
+		argb.set(0, rgba.get(2)); // AA
+		argb.set(1, rgba.get(1)); // RR
+		argb.set(2, rgba.get(0)); // GG
+		argb.set(3, rgba.get(3)); // BB
 
 		// Gets the unsigned integer bytes from the beginning
 		return argb.getInt32(0);

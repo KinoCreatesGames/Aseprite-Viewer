@@ -149,7 +149,7 @@ class Asesprite extends FlxSprite {
 	public function advance(time:Int):Asesprite {
 		if (aPlaying) {
 			if (time < 0) {
-				throw 'TODO: time value can be negative';
+				throw 'TODO: time value can be negative for time';
 			}
 			aFrameTime += time;
 			// Goes through each frame so long as frame is greater than duration
@@ -213,6 +213,7 @@ class Asesprite extends FlxSprite {
 
 	public function parseAsespriteFile(value:Ase):Ase {
 		ase = value;
+		trace('Color Depth', ase.header.colorDepth);
 		for (chunk in ase.frames[0].chunks) {
 			switch (chunk.header.type) {
 				case ChunkType.LAYER:

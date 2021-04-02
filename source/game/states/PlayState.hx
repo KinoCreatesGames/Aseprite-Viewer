@@ -27,7 +27,7 @@ class PlayState extends FlxState {
 
 	override public function create() {
 		super.create();
-		add(new FlxText("Asesprite File Viewer", 24).screenCenter());
+		add(new FlxText("Aseprite File Viewer", 24).screenCenter());
 		createAse();
 		createButtons();
 	}
